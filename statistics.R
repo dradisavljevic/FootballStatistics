@@ -31,22 +31,22 @@ serbia_data <- do.call(rbind, serbia_raw_data) %>% as_tibble()
 montenegro_data <- do.call(rbind, montenegro_raw_data) %>% as_tibble()
 
 # Variable for new dataframe names --------------------------------------------
-simple_names <- c('league',
-                  'level',
-                  'season',
-                  'matchday',
-                  'date',
-                  'time',
-                  'host_id',
-                  'host',
-                  'host_city',
-                  'host_url',
-                  'guest_id',
-                  'guest',
-                  'guest_city',
-                  'guest_url',
-                  'home_goals',
-                  'away_goals')
+simple_names <- c('League',
+                  'Level',
+                  'Season',
+                  'Matchday',
+                  'Date',
+                  'Time',
+                  'HostID',
+                  'Host',
+                  'HostCity',
+                  'HostURL',
+                  'GuestID',
+                  'Guest',
+                  'GuestCity',
+                  'GuestURL',
+                  'HomeGoals',
+                  'AwayGoals')
 
 # Replace names row -----------------------------------------------------------
 names(serbia_data) <- simple_names
@@ -60,24 +60,24 @@ str_to_date <- function(date) {
   return(date)
 }
 
-serbia_data$date <- str_to_date(serbia_data$date)
-montenegro_data$date <- str_to_date(montenegro_data$date)
+serbia_data$Date <- str_to_date(serbia_data$Date)
+montenegro_data$Date <- str_to_date(montenegro_data$Date)
 
 # Remove whitespace from club name and city columns ---------------------------
 remove_white_space <- function(df) {
-  df$host <- trimws(gsub('\\s+', ' ', df$host),
+  df$Host <- trimws(gsub('\\s+', ' ', df$Host),
                     'both', whitespace = "[ \t\r\n]")
   
-  df$host_city <- trimws(gsub('\\s+', ' ', df$host_city),
+  df$HostCity <- trimws(gsub('\\s+', ' ', df$HostCity),
                          'both', whitespace = "[ \t\r\n]")
   
-  df$guest <- trimws(gsub('\\s+', ' ', df$guest),
+  df$Guest <- trimws(gsub('\\s+', ' ', df$Guest),
                      'both', whitespace = "[ \t\r\n]")
   
-  df$guest_city <- trimws(gsub('\\s+', ' ', df$guest_city),
+  df$GuestCity <- trimws(gsub('\\s+', ' ', df$GuestCity),
                           'both', whitespace = "[ \t\r\n]")
   
-  df$league <- trimws(gsub('\\s+', ' ', df$league),
+  df$League <- trimws(gsub('\\s+', ' ', df$League),
                       'both', whitespace = "[ \t\r\n]")
   return (df)
 }
@@ -92,25 +92,24 @@ capitalize_words <- function(city_name) {
   capitalized_name <- paste(toupper(substring(capitalized_name, 1,1)),
                             substring(capitalized_name, 2), 
                             sep="", collapse=" ")
-  
   return(capitalized_name)
 }
 
-serbia_data$host_city <- sapply(serbia_data$host_city,
+serbia_data$HostCity <- sapply(serbia_data$HostCity,
                                 capitalize_words)
 
-serbia_data$guest_city <- sapply(serbia_data$guest_city,
+serbia_data$GuestCity <- sapply(serbia_data$GuestCity,
                                  capitalize_words)
 
-montenegro_data$host_city <- sapply(montenegro_data$host_city,
+montenegro_data$HostCity <- sapply(montenegro_data$HostCity,
                                     capitalize_words)
 
-montenegro_data$guest_city <- sapply(montenegro_data$guest_city,
+montenegro_data$GuestCity <- sapply(montenegro_data$GuestCity,
                                      capitalize_words)
 
 # Take the end year of a season as season year --------------------------------
 round_up_season <- function(df) {
-  df$season <- as.numeric(substr(df$season, 6, 9))
+  df$Season <- as.numeric(substr(df$Season, 6, 9))
   return (df)
 }
 
@@ -119,38 +118,44 @@ montenegro_data <- round_up_season(montenegro_data)
 
 # Remove URL column -----------------------------------------------------------
 serbia_data <- select(serbia_data,
-                      league,
-                      level,
-                      season,
-                      matchday,
-                      date,
-                      time,
-                      host,
-                      host_city,
-                      host_id,
-                      guest,
-                      guest_city,
-                      guest_id,
-                      home_goals,
-                      away_goals)
+                      League,
+                      Level,
+                      Season,
+                      Matchday,
+                      Date,
+                      Time,
+                      Host,
+                      HostCity,
+                      HostID,
+                      Guest,
+                      GuestCity,
+                      GuestID,
+                      HomeGoals,
+                      AwayGoals)
 
 montenegro_data <- select(montenegro_data, 
-                          league, 
-                          level, 
-                          season, 
-                          matchday, 
-                          date, 
-                          time, 
-                          host, 
-                          host_city, 
-                          host_id, 
-                          guest, 
-                          guest_city, 
-                          guest_id, 
-                          home_goals, 
-                          away_goals)
+                          League,
+                          Level,
+                          Season,
+                          Matchday,
+                          Date,
+                          Time,
+                          Host,
+                          HostCity,
+                          HostID,
+                          Guest,
+                          GuestCity,
+                          GuestID,
+                          HomeGoals,
+                          AwayGoals)
 
 # View Data -------------------------------------------------------------------
 view(serbia_data)
 view(montenegro_data)
 
+# Check for not defined values ------------------------------------------------
+serbia_data %>% 
+  summarise_all(function(x) sum(is.na(x)))
+
+montenegro_data %>% 
+  summarise_all(function(x) sum(is.na(x)))
