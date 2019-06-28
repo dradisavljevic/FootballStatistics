@@ -46,7 +46,10 @@ simple_names <- c('League',
                   'GuestCity',
                   'GuestURL',
                   'HomeGoals',
-                  'AwayGoals')
+                  'AwayGoals',
+                  'HomeGoalsHalf',
+                  'AwayGoalsHalf',
+                  'Outcome')
 
 # Replace names row -----------------------------------------------------------
 names(serbia_data) <- simple_names
@@ -69,13 +72,13 @@ remove_white_space <- function(df) {
                     'both', whitespace = "[ \t\r\n]")
   
   df$HostCity <- trimws(gsub('\\s+', ' ', df$HostCity),
-                         'both', whitespace = "[ \t\r\n]")
+                        'both', whitespace = "[ \t\r\n]")
   
   df$Guest <- trimws(gsub('\\s+', ' ', df$Guest),
                      'both', whitespace = "[ \t\r\n]")
   
   df$GuestCity <- trimws(gsub('\\s+', ' ', df$GuestCity),
-                          'both', whitespace = "[ \t\r\n]")
+                         'both', whitespace = "[ \t\r\n]")
   
   df$League <- trimws(gsub('\\s+', ' ', df$League),
                       'both', whitespace = "[ \t\r\n]")
@@ -96,16 +99,16 @@ capitalize_words <- function(city_name) {
 }
 
 serbia_data$HostCity <- sapply(serbia_data$HostCity,
-                                capitalize_words)
+                               capitalize_words)
 
 serbia_data$GuestCity <- sapply(serbia_data$GuestCity,
-                                 capitalize_words)
+                                capitalize_words)
 
 montenegro_data$HostCity <- sapply(montenegro_data$HostCity,
-                                    capitalize_words)
+                                   capitalize_words)
 
 montenegro_data$GuestCity <- sapply(montenegro_data$GuestCity,
-                                     capitalize_words)
+                                    capitalize_words)
 
 # Take the end year of a season as season year --------------------------------
 round_up_season <- function(df) {
@@ -131,7 +134,8 @@ serbia_data <- select(serbia_data,
                       GuestCity,
                       GuestID,
                       HomeGoals,
-                      AwayGoals)
+                      AwayGoals,
+                      Outcome)
 
 montenegro_data <- select(montenegro_data, 
                           League,
@@ -147,15 +151,9 @@ montenegro_data <- select(montenegro_data,
                           GuestCity,
                           GuestID,
                           HomeGoals,
-                          AwayGoals)
+                          AwayGoals,
+                          Outcome)
 
 # View Data -------------------------------------------------------------------
 view(serbia_data)
 view(montenegro_data)
-
-# Check for not defined values ------------------------------------------------
-serbia_data %>% 
-  summarise_all(function(x) sum(is.na(x)))
-
-montenegro_data %>% 
-  summarise_all(function(x) sum(is.na(x)))
