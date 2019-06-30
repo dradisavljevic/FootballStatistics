@@ -66,7 +66,7 @@ str_to_date <- function(date) {
 serbia_data$Date <- str_to_date(serbia_data$Date)
 montenegro_data$Date <- str_to_date(montenegro_data$Date)
 
-# Function that spells the cities grammarly correctly -------------------------
+# Function that spells the cities and club names grammarly correctly -----------
 capitalize_words <- function(city_name) {
   city_name <- as.character(city_name)
   capitalized_name <- strsplit(city_name, ' ')[[1]]
@@ -79,14 +79,26 @@ capitalize_words <- function(city_name) {
 serbia_data$HostCity <- sapply(serbia_data$HostCity,
                                capitalize_words)
 
+serbia_data$Host <- sapply(serbia_data$Host,
+                               capitalize_words)
+
 serbia_data$GuestCity <- sapply(serbia_data$GuestCity,
                                 capitalize_words)
+
+serbia_data$Guest <- sapply(serbia_data$Guest,
+                                capitalize_words)
+
+montenegro_data$Host <- sapply(montenegro_data$Host,
+                                   capitalize_words)
 
 montenegro_data$HostCity <- sapply(montenegro_data$HostCity,
                                    capitalize_words)
 
 montenegro_data$GuestCity <- sapply(montenegro_data$GuestCity,
                                     capitalize_words)
+
+montenegro_data$Guest <- sapply(montenegro_data$Guest,
+                               capitalize_words)
 
 # Merge city columns with club name ones ---------------------------------------
 
@@ -135,6 +147,20 @@ for (i in seq(1,length(team_id_vector))){
                               as.character(montenegro_data$Guest))
 }
 
+test <- montenegro_data
+
+test$HomeGoals[is.na(test$HomeGoals)] <- 0
+test$AwayGoals[is.na(test$AwayGoals)] <- 0
+
+by(serbia_data, 1:nrow(serbia_data), function(row) {
+  if (is.na(row$Date)){
+    print(row$Season)
+  }
+})
+
+test %>% 
+  summarise_all(function(x) sum(is.na(x)))
+
 # Remove whitespace from club name and city columns ---------------------------
 remove_white_space <- function(df) {
   df$Host <- trimws(gsub('\\s+', ' ', df$Host),
@@ -169,9 +195,7 @@ serbia_data <- select(serbia_data,
                       Date,
                       Time,
                       Host,
-                      HostID,
                       Guest,
-                      GuestID,
                       HomeGoals,
                       AwayGoals,
                       Outcome)
@@ -184,9 +208,7 @@ montenegro_data <- select(montenegro_data,
                           Date,
                           Time,
                           Host,
-                          HostID,
                           Guest,
-                          GuestID,
                           HomeGoals,
                           AwayGoals,
                           Outcome)
@@ -194,6 +216,39 @@ montenegro_data <- select(montenegro_data,
 # View Data -------------------------------------------------------------------
 view(serbia_data)
 view(montenegro_data)
+
+seasonal_result_data <- function(data) {
+  seasonal_data <- data %>%
+    gather(key = "venue", value = team, Host:Guest) %>% 
+    arrange(Date) %>%
+    mutate_if(is.factor, as.character) %>%
+    mutate(venue = ifelse(venue == "Host",
+                          "Home",
+                          "Away"),
+           Outcome = case_when(venue == "Home" & Outcome == "H" ~ "W",
+                               venue == "Home" & Outcome == "G" ~ "L",
+                               venue == "Away" & Outcome == "H" ~ "L",
+                               venue == "Away" & Outcome == "G" ~ "W",
+                               TRUE ~ Outcome),
+           FTGF = ifelse(venue == "Home", HomeGoals, AwayGoals),  #Full Time Goals For
+           FTGA = ifelse(venue == "Home", AwayGoals, HomeGoals),  #Full Time Goals Against
+           goal_diff = FTGF - FTGA,                    #goal difference
+           points_earned = case_when(Outcome == "W" ~ 3,           #adding points
+                                     Outcome == "D" ~ 1,
+                                     Outcome == "L" ~ 0)) %>% 
+    select(League, Season, Date, team, venue, Outcome, FTGF, 
+           FTGA, goal_diff, points_earned) %>%
+    group_by(Season, team) %>%
+    mutate(points = cumsum(points_earned),
+           goal_diff_tot = cumsum(goal_diff)) %>% #calculating the number of points each team has through out the season
+    ungroup()
+  
+  return (seasonal_data)
+}
+
+serbia_data_tidy <- seasonal_result_data(serbia_data)
+montenegro_data_tidy <- seasonal_result_data(montenegro_data)
+view(serbia_data_tidy)
 
 # Check for not defined values ------------------------------------------------
 serbia_data %>% 
