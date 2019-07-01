@@ -82,23 +82,11 @@ serbia_data$HostCity <- sapply(serbia_data$HostCity,
 serbia_data$Host <- sapply(serbia_data$Host,
                                capitalize_words)
 
-serbia_data$GuestCity <- sapply(serbia_data$GuestCity,
-                                capitalize_words)
-
-serbia_data$Guest <- sapply(serbia_data$Guest,
-                                capitalize_words)
-
 montenegro_data$Host <- sapply(montenegro_data$Host,
                                    capitalize_words)
 
 montenegro_data$HostCity <- sapply(montenegro_data$HostCity,
                                    capitalize_words)
-
-montenegro_data$GuestCity <- sapply(montenegro_data$GuestCity,
-                                    capitalize_words)
-
-montenegro_data$Guest <- sapply(montenegro_data$Guest,
-                               capitalize_words)
 
 # Merge city columns with club name ones ---------------------------------------
 
@@ -146,20 +134,6 @@ for (i in seq(1,length(team_id_vector))){
                               as.character(team_name_vector[i]),
                               as.character(montenegro_data$Guest))
 }
-
-test <- montenegro_data
-
-test$HomeGoals[is.na(test$HomeGoals)] <- 0
-test$AwayGoals[is.na(test$AwayGoals)] <- 0
-
-by(serbia_data, 1:nrow(serbia_data), function(row) {
-  if (is.na(row$Date)){
-    print(row$Season)
-  }
-})
-
-test %>% 
-  summarise_all(function(x) sum(is.na(x)))
 
 # Remove whitespace from club name and city columns ---------------------------
 remove_white_space <- function(df) {
@@ -213,46 +187,61 @@ montenegro_data <- select(montenegro_data,
                           AwayGoals,
                           Outcome)
 
-# View Data -------------------------------------------------------------------
-view(serbia_data)
-view(montenegro_data)
-
-seasonal_result_data <- function(data) {
-  seasonal_data <- data %>%
-    gather(key = "venue", value = team, Host:Guest) %>% 
-    arrange(Date) %>%
-    mutate_if(is.factor, as.character) %>%
-    mutate(venue = ifelse(venue == "Host",
-                          "Home",
-                          "Away"),
-           Outcome = case_when(venue == "Home" & Outcome == "H" ~ "W",
-                               venue == "Home" & Outcome == "G" ~ "L",
-                               venue == "Away" & Outcome == "H" ~ "L",
-                               venue == "Away" & Outcome == "G" ~ "W",
-                               TRUE ~ Outcome),
-           FTGF = ifelse(venue == "Home", HomeGoals, AwayGoals),  #Full Time Goals For
-           FTGA = ifelse(venue == "Home", AwayGoals, HomeGoals),  #Full Time Goals Against
-           goal_diff = FTGF - FTGA,                    #goal difference
-           points_earned = case_when(Outcome == "W" ~ 3,           #adding points
-                                     Outcome == "D" ~ 1,
-                                     Outcome == "L" ~ 0)) %>% 
-    select(League, Season, Date, team, venue, Outcome, FTGF, 
-           FTGA, goal_diff, points_earned) %>%
-    group_by(Season, team) %>%
-    mutate(points = cumsum(points_earned),
-           goal_diff_tot = cumsum(goal_diff)) %>% #calculating the number of points each team has through out the season
-    ungroup()
-  
-  return (seasonal_data)
-}
-
-serbia_data_tidy <- seasonal_result_data(serbia_data)
-montenegro_data_tidy <- seasonal_result_data(montenegro_data)
-view(serbia_data_tidy)
-
 # Check for not defined values ------------------------------------------------
 serbia_data %>% 
   summarise_all(function(x) sum(is.na(x)))
 
 montenegro_data %>% 
   summarise_all(function(x) sum(is.na(x)))
+
+# Replace missing Date values -------------------------------------------------
+
+rows_with_missing_values <- serbia_data[is.na(serbia_data$Date),]
+missing_dates <- c()
+
+for (i in seq(1,nrow(rows_with_missing_values))){
+  missing_dates[i] <- serbia_data$Date[!is.na(serbia_data$Date) 
+                      & serbia_data$Season == rows_with_missing_values$Season[i] 
+                      & serbia_data$Matchday == rows_with_missing_values$Matchday[i] 
+                      & serbia_data$Level == rows_with_missing_values$Level[i]][1]
+}
+
+for (i in seq(1,length(missing_dates))){
+  serbia_data$Date[is.na(serbia_data$Date)][1] <- as.Date(missing_dates[i], origin=lubridate::origin)
+}
+
+rows_with_missing_values <- montenegro_data[is.na(montenegro_data$Date),]
+missing_dates <- c()
+
+for (i in seq(1,nrow(rows_with_missing_values))){
+  missing_dates[i] <- montenegro_data$Date[!is.na(montenegro_data$Date) 
+                                       & montenegro_data$Season == rows_with_missing_values$Season[i] 
+                                       & montenegro_data$Matchday == rows_with_missing_values$Matchday[i] 
+                                       & montenegro_data$Level == rows_with_missing_values$Level[i]][1]
+}
+
+for (i in seq(1,length(missing_dates))){
+  montenegro_data$Date[is.na(montenegro_data$Date)][1] <- as.Date(missing_dates[i], origin=lubridate::origin)
+}
+
+# Correct incorrect Date values -----------------------------------------------
+
+incorrect_date_level <- serbia_data$Level[year(serbia_data$Date)==2000]
+incorrect_date_matchday <- serbia_data$Matchday[year(serbia_data$Date)==2000]
+incorrect_date_season <- serbia_data$Season[year(serbia_data$Date)==2000]
+
+serbia_data$Date[year(serbia_data$Date)==2000] <- serbia_data$Date[year(serbia_data$Date)!=2000
+                 & serbia_data$Level == incorrect_date_level
+                 & serbia_data$Matchday == incorrect_date_matchday
+                 & serbia_data$Season == incorrect_date_season][1]
+
+# Default missing resaults to 0:0 as to not affect Goal difference too much ---
+
+montenegro_data$HomeGoals[is.na(montenegro_data$HomeGoals)] <- 0
+montenegro_data$AwayGoals[is.na(montenegro_data$AwayGoals)] <- 0
+serbia_data$HomeGoals[is.na(serbia_data$HomeGoals)] <- 0
+serbia_data$AwayGoals[is.na(serbia_data$AwayGoals)] <- 0
+
+# View Data -------------------------------------------------------------------
+view(serbia_data)
+view(montenegro_data)
