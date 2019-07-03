@@ -1,7 +1,10 @@
+## SET UP ENVIRONMENT AND LOAD DATA -------------------------------------------
 # Set working directory to the current files directory ------------------------
+
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Loading in the required packages --------------------------------------------
+
 install.packages('tidyr')
 install.packages('lubridate')
 install.packages('magrittr')
@@ -18,19 +21,28 @@ suppressWarnings(suppressPackageStartupMessages({
   library(stringr)
 }))
 
+# Load functions for data manipulation ----------------------------------------
+
+source("manipulate_data.R")
+
 # Load the data file ----------------------------------------------------------
+
 serbia_csv <- list.files(path = 'SRB', full.names = TRUE)
 montengro_csv <- list.files(path = 'MNE', full.names = TRUE)
 
 # Map the data from file ------------------------------------------------------
+
 serbia_raw_data <- map(serbia_csv, read.csv)
 montenegro_raw_data <- map(montengro_csv, read.csv)
 
 # Convert data to tibble ------------------------------------------------------
+
 serbia_data <- do.call(rbind, serbia_raw_data) %>% as_tibble()
 montenegro_data <- do.call(rbind, montenegro_raw_data) %>% as_tibble()
 
+## MANIPULATE DATA ------------------------------------------------------------
 # Variable for new dataframe names --------------------------------------------
+
 simple_names <- c('League',
                   'Level',
                   'Season',
@@ -52,29 +64,16 @@ simple_names <- c('League',
                   'Outcome')
 
 # Replace names row -----------------------------------------------------------
+
 names(serbia_data) <- simple_names
 names(montenegro_data) <- simple_names
 
 # Convert date from String to Date type ---------------------------------------
-str_to_date <- function(date) {
-  date <- gsub('\\.', '/', date)
-  date <- dmy(date)
-  
-  return(date)
-}
 
 serbia_data$Date <- str_to_date(serbia_data$Date)
 montenegro_data$Date <- str_to_date(montenegro_data$Date)
 
-# Function that spells the cities and club names grammarly correctly -----------
-capitalize_words <- function(city_name) {
-  city_name <- as.character(city_name)
-  capitalized_name <- strsplit(city_name, ' ')[[1]]
-  capitalized_name <- paste(toupper(substring(capitalized_name, 1,1)),
-                            substring(capitalized_name, 2), 
-                            sep='', collapse=' ')
-  return(capitalized_name)
-}
+# Spell the cities and club names grammarly correctly -------------------------
 
 serbia_data$HostCity <- sapply(serbia_data$HostCity,
                                capitalize_words)
@@ -136,31 +135,17 @@ for (i in seq(1,length(team_id_vector))){
 }
 
 # Remove whitespace from club name and city columns ---------------------------
-remove_white_space <- function(df) {
-  df$Host <- trimws(gsub('\\s+', ' ', df$Host),
-                    'both', whitespace = '[ \t\r\n]')
-  
-  df$Guest <- trimws(gsub('\\s+', ' ', df$Guest),
-                     'both', whitespace = '[ \t\r\n]')
-  
-  df$League <- trimws(gsub('\\s+', ' ', df$League),
-                      'both', whitespace = '[ \t\r\n]')
-  return (df)
-}
 
 serbia_data <- remove_white_space(serbia_data)
 montenegro_data <- remove_white_space(montenegro_data)
 
 # Take the end year of a season as season year --------------------------------
-round_up_season <- function(df) {
-  df$Season <- as.numeric(substr(df$Season, 6, 9))
-  return (df)
-}
 
 serbia_data <- round_up_season(serbia_data)
 montenegro_data <- round_up_season(montenegro_data)
 
 # Remove unnecessary columns ----=----------------------------------------------
+
 serbia_data <- select(serbia_data,
                       League,
                       Level,
@@ -188,6 +173,7 @@ montenegro_data <- select(montenegro_data,
                           Outcome)
 
 # Check for not defined values ------------------------------------------------
+
 serbia_data %>% 
   summarise_all(function(x) sum(is.na(x)))
 
@@ -243,5 +229,12 @@ serbia_data$HomeGoals[is.na(serbia_data$HomeGoals)] <- 0
 serbia_data$AwayGoals[is.na(serbia_data$AwayGoals)] <- 0
 
 # View Data -------------------------------------------------------------------
+
 view(serbia_data)
 view(montenegro_data)
+
+# Get seasonal data -----------------------------------------------------------
+
+serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==2,])
+montenegro_data_tidy <- seasonal_result_data(montenegro_data)
+view(serbia_data_tidy)
