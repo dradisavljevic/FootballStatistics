@@ -38,28 +38,28 @@ round_up_season <- function(df) {
 # Get seasonal data from desired league ----------------------------------------
 seasonal_result_data <- function(data) {
   seasonal_data <- data %>%
-    gather(key = "venue", value = team, Host:Guest) %>% 
+    gather(key = "Venue", value = Team, Host:Guest) %>% 
     arrange(Date) %>%
     mutate_if(is.factor, as.character) %>%
-    mutate(venue = ifelse(venue == "Host",
+    mutate(Venue = ifelse(Venue == "Host",
                           "Home",
                           "Away"),
-           Outcome = case_when(venue == "Home" & Outcome == "H" ~ "W",
-                               venue == "Home" & Outcome == "G" ~ "L",
-                               venue == "Away" & Outcome == "H" ~ "L",
-                               venue == "Away" & Outcome == "G" ~ "W",
+           Outcome = case_when(Venue == "Home" & Outcome == "H" ~ "W",
+                               Venue == "Home" & Outcome == "G" ~ "L",
+                               Venue == "Away" & Outcome == "H" ~ "L",
+                               Venue == "Away" & Outcome == "G" ~ "W",
                                TRUE ~ Outcome),
-           FTGF = ifelse(venue == "Home", HomeGoals, AwayGoals),  #Full Time Goals For
-           FTGA = ifelse(venue == "Home", AwayGoals, HomeGoals),  #Full Time Goals Against
-           goal_diff = FTGF - FTGA,                    #goal difference
-           points_earned = case_when(Outcome == "W" ~ 3,           #adding points
+           FTGF = ifelse(Venue == "Home", HomeGoals, AwayGoals),  #Full Time Goals For
+           FTGA = ifelse(Venue == "Home", AwayGoals, HomeGoals),  #Full Time Goals Against
+           GoalDifference = FTGF - FTGA,                    #goal difference
+           PointsEarned = case_when(Outcome == "W" ~ 3,           #adding points
                                      Outcome == "D" ~ 1,
                                      Outcome == "L" ~ 0)) %>% 
-    select(League, Season, Date, team, venue, Outcome, FTGF, 
-           FTGA, goal_diff, points_earned) %>%
-    group_by(Season, League, team) %>%
-    mutate(points = cumsum(points_earned),
-           goal_diff_tot = cumsum(goal_diff)) %>% #calculating the number of points each team has through out the season
+    select(League, Season, Date, Team, Venue, Outcome, FTGF, 
+           FTGA, GoalDifference, PointsEarned) %>%
+    group_by(Season, League, Team) %>%
+    mutate(points = cumsum(PointsEarned),
+           GoalDifferenceTotal = cumsum(GoalDifference)) %>% #calculating the number of points each team has through out the season
     ungroup()
   
   return (seasonal_data)

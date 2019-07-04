@@ -11,6 +11,8 @@ install.packages('magrittr')
 install.packages('tidyquant')
 install.packages('purrr')
 install.packages('dplyr')
+install.packages('ggplot2')
+install.packages('ggjoy')
 suppressWarnings(suppressPackageStartupMessages({
   library(tidyr)
   library(lubridate)
@@ -19,6 +21,8 @@ suppressWarnings(suppressPackageStartupMessages({
   library(purrr)
   library(dplyr)
   library(stringr)
+  library(ggplot2)
+  library(ggjoy)
 }))
 
 # Load functions for data manipulation ----------------------------------------
@@ -235,6 +239,7 @@ view(montenegro_data)
 
 # Get seasonal data -----------------------------------------------------------
 
-serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==2,])
+serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==1,])
 montenegro_data_tidy <- seasonal_result_data(montenegro_data)
 view(serbia_data_tidy)
+
