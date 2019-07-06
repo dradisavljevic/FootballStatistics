@@ -28,6 +28,7 @@ suppressWarnings(suppressPackageStartupMessages({
 # Load functions for data manipulation ----------------------------------------
 
 source("manipulate_data.R")
+source("descriptive.R")
 
 # Load the data file ----------------------------------------------------------
 
@@ -91,52 +92,15 @@ montenegro_data$Host <- sapply(montenegro_data$Host,
 montenegro_data$HostCity <- sapply(montenegro_data$HostCity,
                                    capitalize_words)
 
-# Merge city columns with club name ones ---------------------------------------
+# Merge city columns with club name ones --------------------------------------
 
 serbia_data$Host <- str_split_fixed(serbia_data$Host, '\\(', 2)[,1]
 montenegro_data$Host <- str_split_fixed(montenegro_data$Host, '\\(', 2)[,1]
 serbia_data$Guest <- str_split_fixed(serbia_data$Guest, '\\(', 2)[,1]
 montenegro_data$Guest <- str_split_fixed(montenegro_data$Guest, '\\(', 2)[,1]
 
-team_id_vector <- c()
-team_name_vector <- c()
-
-by(serbia_data, 1:nrow(serbia_data), function(row) {
-  if (!(row$HostID) %in% team_id_vector){
-    team_id_vector[length(team_id_vector)+1] <<- row$HostID
-    team_name_vector[length(team_name_vector)+1] <<-
-      paste(row$Host, ' (',row$HostCity, ')', sep='')
-  }
-})
-
-for (i in seq(1,length(team_id_vector))){
-  serbia_data$Host <- ifelse(serbia_data$HostID==team_id_vector[i],
-                        as.character(team_name_vector[i]),
-                        as.character(serbia_data$Host))
-  serbia_data$Guest <- ifelse(serbia_data$GuestID==team_id_vector[i],
-                      as.character(team_name_vector[i]),
-                      as.character(serbia_data$Guest))
-}
-
-team_id_vector <- c()
-team_name_vector <- c()
-
-by(montenegro_data, 1:nrow(montenegro_data), function(row) {
-  if (!(row$HostID) %in% team_id_vector){
-    team_id_vector[length(team_id_vector)+1] <<- row$HostID
-    team_name_vector[length(team_name_vector)+1] <<-
-      paste(row$Host, ' (',row$HostCity, ')', sep='')
-  }
-})
-
-for (i in seq(1,length(team_id_vector))){
-  montenegro_data$Host <- ifelse(montenegro_data$HostID==team_id_vector[i],
-                             as.character(team_name_vector[i]),
-                             as.character(montenegro_data$Host))
-  montenegro_data$Guest <- ifelse(montenegro_data$GuestID==team_id_vector[i],
-                              as.character(team_name_vector[i]),
-                              as.character(montenegro_data$Guest))
-}
+serbia_data <- merge_name_and_city(serbia_data)
+montenegro_data <- merge_name_and_city(montenegro_data)
 
 # Remove whitespace from club name and city columns ---------------------------
 
@@ -243,3 +207,11 @@ serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==1,])
 montenegro_data_tidy <- seasonal_result_data(montenegro_data)
 view(serbia_data_tidy)
 
+get_teams_per_level(serbia_data)
+get_teams_per_level(montenegro_data)
+
+get_min_max_goals_league(serbia_data)
+get_min_max_goals_league(montenegro_data)
+
+get_min_max_goals_team(serbia_data)
+get_min_max_goals_team(montenegro_data)
