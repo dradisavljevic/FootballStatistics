@@ -66,3 +66,90 @@ get_min_max_goals_team <- function(df) {
   print(goals[1:10,])
   print('--------------------------------------------------------')
 }
+
+# Count number of clubs per city -----------------------------------------------
+
+get_number_of_clubs_per_city <- function(df) {
+  df <- df %>%
+    group_by(Host) %>%
+    summarise(NumberOfGames = n()) %>%
+    ungroup()
+  
+  suppressWarnings(
+    df <- df %>% separate(Host, sep = "\\(", into = c("ClubName", "CityName") )
+  )
+  
+  df$CityName <- gsub('\\)', '', df$CityName)
+  
+  df <- df %>%
+    group_by(CityName) %>%
+    summarise(NumberOfClubs = n()) %>%
+    ungroup()
+  
+  df <- df[df$NumberOfClubs > 1,]
+  
+  df <- df[with(df,order(-NumberOfClubs)),]
+  
+  View(df, title='Cities with more than one club participating in leagues: ')
+  print(df)
+  
+}
+
+# Get maximum number of goals scored per league season -------------------------
+
+get_max_goals_statistics <- function(df) {
+  df <- df %>%
+    mutate(CombinedGoals = HomeGoals + AwayGoals)
+  
+  goals <- df %>%
+    group_by(Season, League) %>%
+    summarise(MaximumGoalsHome = max(HomeGoals),
+              MaximumGoalsAway = max(AwayGoals),
+              MaximumGoalsCombined = max(CombinedGoals)) %>%
+    ungroup()
+  
+  View(goals,title='Maximum amount of goals per league season')
+}
+
+# Get maximum number of goals scored per league matchday -----------------------
+
+get_goal_max_per_matchday <- function(df) {
+  df <- df %>%
+    mutate(CombinedGoals = HomeGoals + AwayGoals)
+  
+  goals <- df %>%
+    group_by(Season, League, Matchday) %>%
+    summarise(AmountOfGoalsPerDay = sum(CombinedGoals)) %>%
+    filter(AmountOfGoalsPerDay == max(AmountOfGoalsPerDay)) %>%
+    arrange(desc(AmountOfGoalsPerDay), .by_group = FALSE) %>%
+    ungroup()
+  
+  View(goals,title='Amount of Goals Per Matchday')
+}
+
+# Percentage of game outcome per league season --------------------------------
+
+get_win_percentage_league <- function(df) {
+  df <- df %>%
+    group_by(Season, League) %>%
+    summarise(PercentageWinsHome = round(sum(Outcome == 'H')/n(), 2),
+              PercentageWinsGuest = round(sum(Outcome == 'G')/n(), 2),
+              PercentageDraws = round(sum(Outcome == 'D')/n(), 2)) %>%
+    ungroup()
+  
+  View(df, title='Win Percentage Per League Season')
+}
+
+# Percentage of game outcome per league matchday -------------------------------
+
+get_win_percentage_league_matchday <- function(df) {
+  df <- df %>%
+    group_by(Season, League, Matchday) %>%
+    summarise(PercentageWinsHome = round(sum(Outcome == 'H')/n(), 2),
+              PercentageWinsGuest = round(sum(Outcome == 'G')/n(), 2),
+              PercentageDraws = round(sum(Outcome == 'D')/n(), 2)) %>%
+    ungroup()
+  
+  View(df, title='Win Percentage Per League Matchday')
+  
+}

@@ -205,13 +205,21 @@ view(montenegro_data)
 
 serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==1,])
 montenegro_data_tidy <- seasonal_result_data(montenegro_data)
-view(serbia_data_tidy)
 
 get_teams_per_level(serbia_data)
 get_teams_per_level(montenegro_data)
 
-get_min_max_goals_league(serbia_data)
-get_min_max_goals_league(montenegro_data)
+get_number_of_clubs_per_city(serbia_data)
+get_number_of_clubs_per_city(montenegro_data)
 
-get_min_max_goals_team(serbia_data)
-get_min_max_goals_team(montenegro_data)
+get_max_goals_statistics(serbia_data)
+get_max_goals_statistics(montenegro_data)
+
+get_goal_max_per_matchday(serbia_data)
+get_goal_max_per_matchday(montenegro_data)
+
+get_win_percentage_league(serbia_data)
+get_win_percentage_league(montenegro_data)
+
+get_win_percentage_league_matchday(serbia_data[serbia_data$Level==1,])
+get_win_percentage_league_matchday(montenegro_data[montenegro_data$Level==1,])
