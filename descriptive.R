@@ -1,3 +1,12 @@
+# Function to calculate mode ---------------------------------------------------
+
+getMode <- function(v) {
+  uv <- unique(v)
+  mode <- uv[which.max(tabulate(match(v, uv)))]
+  
+  return(mode)
+}
+
 # Get number of different teams that have played in the league -----------------
 
 get_teams_per_level <- function(df) {
@@ -6,29 +15,6 @@ get_teams_per_level <- function(df) {
     team_number <- nrow(table(df$Host[df$Level==i]))
     print(paste('Leagues at level ', i, ' had ', team_number, ' different teams playing in it so far.'))
   }
-}
-
-# Get minimum and maxmum of goals per league by season --------------------------
-
-get_min_max_goals_league <- function(df) {
-  goals <- df %>%
-    group_by(Season, League) %>%
-    summarise(Goals = sum(HomeGoals, AwayGoals),
-              NumberOfGames = n(),
-              MeanHome = mean(HomeGoals, na.rm=TRUE),
-              MeanAway = mean(AwayGoals, na.rm=TRUE)) %>%
-    ungroup()
-  
-  goals <- goals[goals$Goals > 100,]
-  
-  goals <- goals[with(goals,order(Goals)),]
-  print('League seasons with least scored goals are: ')
-  print(goals[1:5,])
-  print('--------------------------------------------------------')
-  print('League seasons with most scored goals are: ')
-  goals <- goals[with(goals,order(-Goals)),]
-  print(goals[1:5,])
-  print('--------------------------------------------------------')
 }
 
 # Get minimum and maximum of goals per team by season ---------------------------
@@ -95,23 +81,80 @@ get_number_of_clubs_per_city <- function(df) {
   
 }
 
-# Get maximum number of goals scored per league season -------------------------
+# Get descriptive statistics for goals scored per league season ----------------
 
-get_max_goals_statistics <- function(df) {
+get_home_goals_descriptive <- function(df) {
+  goals <- df %>%
+    group_by(Season, League) %>%
+    summarise(Max = max(HomeGoals),
+              Min = min(HomeGoals),
+              Mean = mean(HomeGoals),
+              StandardDeviation = sd(HomeGoals),
+              SDMeanError = sd(HomeGoals) / n(),
+              Median = quantile(HomeGoals)[3],
+              Mode = getMode(HomeGoals),
+              Quantile1 = quantile(HomeGoals)[2],
+              Quantil3 = quantile(HomeGoals)[4],
+              Skewness = skewness(HomeGoals),
+              Kurtosis = kurtosis(HomeGoals),
+              Games = n(),
+              Total = sum(HomeGoals),
+    ) %>%
+    ungroup()
+  
+  View(goals,title='Home Goals Per League Season Statistics')
+}
+
+get_away_goals_descriptive <- function(df) {
+  goals <- df %>%
+    group_by(Season, League) %>%
+    summarise(Max = max(AwayGoals),
+              Min = min(AwayGoals),
+              Mean = mean(AwayGoals),
+              StandardDeviation = sd(AwayGoals),
+              SDMeanError = sd(AwayGoals) / n(),
+              Median = quantile(AwayGoals)[3],
+              Mode = getMode(AwayGoals),
+              Quantile1 = quantile(AwayGoals)[2],
+              Quantil3 = quantile(AwayGoals)[4],
+              Skewness = skewness(AwayGoals),
+              Kurtosis = kurtosis(AwayGoals),
+              Games = n(),
+              Total = sum(AwayGoals),
+    ) %>%
+    ungroup()
+  
+  View(goals,title='Away Goals Per League Season Statistics')
+}
+
+
+get_combined_goals_descriptive <- function(df) {
   df <- df %>%
     mutate(CombinedGoals = HomeGoals + AwayGoals)
   
   goals <- df %>%
     group_by(Season, League) %>%
-    summarise(MaximumGoalsHome = max(HomeGoals),
-              MaximumGoalsAway = max(AwayGoals),
-              MaximumGoalsCombined = max(CombinedGoals)) %>%
+    summarise(Max = max(CombinedGoals),
+              Min = min(CombinedGoals),
+              Mean = mean(CombinedGoals),
+              StandardDeviation = sd(CombinedGoals),
+              SDMeanError = sd(CombinedGoals) / n(),
+              Median = quantile(CombinedGoals)[3],
+              Mode = getMode(CombinedGoals),
+              Quantile1 = quantile(CombinedGoals)[2],
+              Quantil3 = quantile(CombinedGoals)[4],
+              Skewness = skewness(CombinedGoals),
+              Kurtosis = kurtosis(CombinedGoals),
+              Games = n(),
+              Total = sum(CombinedGoals),
+    ) %>%
     ungroup()
   
-  View(goals,title='Maximum amount of goals per league season')
+  
+  View(goals,title='Combined Goals Per League Season Statistics')
 }
 
-# Get maximum number of goals scored per league matchday -----------------------
+# Get statistics for highest and fewest scoring matchdays ----------------------
 
 get_goal_max_per_matchday <- function(df) {
   df <- df %>%
@@ -119,12 +162,52 @@ get_goal_max_per_matchday <- function(df) {
   
   goals <- df %>%
     group_by(Season, League, Matchday) %>%
-    summarise(AmountOfGoalsPerDay = sum(CombinedGoals)) %>%
-    filter(AmountOfGoalsPerDay == max(AmountOfGoalsPerDay)) %>%
-    arrange(desc(AmountOfGoalsPerDay), .by_group = FALSE) %>%
+    summarise(Max = max(CombinedGoals),
+              Min = min(CombinedGoals),
+              Mean = mean(CombinedGoals),
+              StandardDeviation = sd(CombinedGoals),
+              SDMeanError = sd(CombinedGoals) / n(),
+              Median = quantile(CombinedGoals)[3],
+              Mode = getMode(CombinedGoals),
+              Quantile1 = quantile(CombinedGoals)[2],
+              Quantil3 = quantile(CombinedGoals)[4],
+              Skewness = skewness(CombinedGoals),
+              Kurtosis = kurtosis(CombinedGoals),
+              Games = n(),
+              Total = sum(CombinedGoals),
+              ) %>%
+    filter(Total == max(Total)) %>%
+    arrange(desc(Total), .by_group = FALSE) %>%
     ungroup()
   
-  View(goals,title='Amount of Goals Per Matchday')
+  View(goals,title='Highest Scoring Matchday Statistics')
+}
+
+get_goal_min_per_matchday <- function(df) {
+  df <- df %>%
+    mutate(CombinedGoals = HomeGoals + AwayGoals)
+  
+  goals <- df %>%
+    group_by(Season, League, Matchday) %>%
+    summarise(Max = max(CombinedGoals),
+              Min = min(CombinedGoals),
+              Mean = mean(CombinedGoals),
+              StandardDeviation = sd(CombinedGoals),
+              SDMeanError = sd(CombinedGoals) / n(),
+              Median = quantile(CombinedGoals)[3],
+              Mode = getMode(CombinedGoals),
+              Quantile1 = quantile(CombinedGoals)[2],
+              Quantil3 = quantile(CombinedGoals)[4],
+              Skewness = skewness(CombinedGoals),
+              Kurtosis = kurtosis(CombinedGoals),
+              Games = n(),
+              Total = sum(CombinedGoals),
+    ) %>%
+    filter(Total == min(Total)) %>%
+    arrange(desc(Total), .by_group = FALSE) %>%
+    ungroup()
+  
+  View(goals,title='Lowest Scoring Matchday Statistics')
 }
 
 # Percentage of game outcome per league season --------------------------------

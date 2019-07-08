@@ -65,6 +65,43 @@ round_up_season <- function(df) {
   return (df)
 }
 
+# Replace missing dates function ----------------------------------------------
+
+replace_missing_dates <- function(df) {
+  rows_with_missing_values <- df[is.na(df$Date),]
+  missing_dates <- c()
+  
+  for (i in seq(1,nrow(rows_with_missing_values))){
+    missing_dates[i] <- df$Date[!is.na(df$Date) 
+                                         & df$Season == rows_with_missing_values$Season[i] 
+                                         & df$Matchday == rows_with_missing_values$Matchday[i] 
+                                         & df$Level == rows_with_missing_values$Level[i]][1]
+  }
+  
+  for (i in seq(1,length(missing_dates))){
+    df$Date[is.na(df$Date)][1] <- as.Date(missing_dates[i], origin=lubridate::origin)
+  }
+  
+  rows_with_missing_values <- df[is.na(df$Date),]
+  
+  if (dim(rows_with_missing_values)[1] != 0) {
+    matchday <- rows_with_missing_values$Matchday[1]-1
+    missing_date <- df$Date[!is.na(df$Date) 
+                            & df$Season == rows_with_missing_values$Season[1] 
+                            & df$Matchday+1 == rows_with_missing_values$Matchday[1] 
+                            & df$Level == rows_with_missing_values$Level[1]][1]
+  }
+  
+  iterations <- dim(rows_with_missing_values)[1]
+  
+  for (i in seq(1,iterations)){
+    df$Date[is.na(df$Date)][1] <- as.Date(missing_date, origin=lubridate::origin)+7*(df$Matchday[is.na(df$Date)][1]-matchday)
+  }
+  
+  return(df)
+  
+}
+
 # Get seasonal data from desired league ----------------------------------------
 
 seasonal_result_data <- function(data) {

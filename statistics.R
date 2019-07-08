@@ -11,6 +11,7 @@ install.packages('magrittr')
 install.packages('tidyquant')
 install.packages('purrr')
 install.packages('dplyr')
+install.packages('moments')
 install.packages('ggplot2')
 install.packages('ggjoy')
 suppressWarnings(suppressPackageStartupMessages({
@@ -21,6 +22,7 @@ suppressWarnings(suppressPackageStartupMessages({
   library(purrr)
   library(dplyr)
   library(stringr)
+  library(moments)
   library(ggplot2)
   library(ggjoy)
 }))
@@ -150,33 +152,8 @@ montenegro_data %>%
 
 # Replace missing Date values -------------------------------------------------
 
-rows_with_missing_values <- serbia_data[is.na(serbia_data$Date),]
-missing_dates <- c()
-
-for (i in seq(1,nrow(rows_with_missing_values))){
-  missing_dates[i] <- serbia_data$Date[!is.na(serbia_data$Date) 
-                      & serbia_data$Season == rows_with_missing_values$Season[i] 
-                      & serbia_data$Matchday == rows_with_missing_values$Matchday[i] 
-                      & serbia_data$Level == rows_with_missing_values$Level[i]][1]
-}
-
-for (i in seq(1,length(missing_dates))){
-  serbia_data$Date[is.na(serbia_data$Date)][1] <- as.Date(missing_dates[i], origin=lubridate::origin)
-}
-
-rows_with_missing_values <- montenegro_data[is.na(montenegro_data$Date),]
-missing_dates <- c()
-
-for (i in seq(1,nrow(rows_with_missing_values))){
-  missing_dates[i] <- montenegro_data$Date[!is.na(montenegro_data$Date) 
-                                       & montenegro_data$Season == rows_with_missing_values$Season[i] 
-                                       & montenegro_data$Matchday == rows_with_missing_values$Matchday[i] 
-                                       & montenegro_data$Level == rows_with_missing_values$Level[i]][1]
-}
-
-for (i in seq(1,length(missing_dates))){
-  montenegro_data$Date[is.na(montenegro_data$Date)][1] <- as.Date(missing_dates[i], origin=lubridate::origin)
-}
+serbia_data <- replace_missing_dates(serbia_data)
+montenegro_data <- replace_missing_dates(montenegro_data)
 
 # Correct incorrect Date values -----------------------------------------------
 
@@ -206,20 +183,30 @@ view(montenegro_data)
 serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==1,])
 montenegro_data_tidy <- seasonal_result_data(montenegro_data)
 
+# CONDUCT STATISTICAL ANALYSIS ------------------------------------------------
+# Get descriptive statistics --------------------------------------------------
+
 get_teams_per_level(serbia_data)
 get_teams_per_level(montenegro_data)
-
 get_number_of_clubs_per_city(serbia_data)
 get_number_of_clubs_per_city(montenegro_data)
 
-get_max_goals_statistics(serbia_data)
-get_max_goals_statistics(montenegro_data)
+get_home_goals_descriptive(serbia_data)
+get_home_goals_descriptive(montenegro_data)
+get_away_goals_descriptive(serbia_data)
+get_away_goals_descriptive(montenegro_data)
+get_combined_goals_descriptive(serbia_data)
+get_combined_goals_descriptive(montenegro_data)
 
 get_goal_max_per_matchday(serbia_data)
 get_goal_max_per_matchday(montenegro_data)
+get_goal_min_per_matchday(serbia_data)
+get_goal_min_per_matchday(montenegro_data)
 
 get_win_percentage_league(serbia_data)
 get_win_percentage_league(montenegro_data)
-
 get_win_percentage_league_matchday(serbia_data[serbia_data$Level==1,])
 get_win_percentage_league_matchday(montenegro_data[montenegro_data$Level==1,])
+
+get_min_max_goals_team(serbia_data)
+get_min_max_goals_team(montenegro_data)
