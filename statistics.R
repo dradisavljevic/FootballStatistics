@@ -14,6 +14,7 @@ install.packages('dplyr')
 install.packages('moments')
 install.packages('ggplot2')
 install.packages('ggjoy')
+install.packages('nortest')
 suppressWarnings(suppressPackageStartupMessages({
   library(tidyr)
   library(lubridate)
@@ -25,12 +26,15 @@ suppressWarnings(suppressPackageStartupMessages({
   library(moments)
   library(ggplot2)
   library(ggjoy)
+  library(nortest)
 }))
 
 # Load functions for data manipulation ----------------------------------------
 
-source("manipulate_data.R")
-source("descriptive.R")
+source('prepare_data.R')
+source('descriptive.R')
+source('match_result_stat.R')
+source('opening_weekend.R')
 
 # Load the data file ----------------------------------------------------------
 
@@ -47,7 +51,7 @@ montenegro_raw_data <- map(montengro_csv, read.csv)
 serbia_data <- do.call(rbind, serbia_raw_data) %>% as_tibble()
 montenegro_data <- do.call(rbind, montenegro_raw_data) %>% as_tibble()
 
-## MANIPULATE DATA ------------------------------------------------------------
+## PREPARE DATA ---------------------------------------------------------------
 # Variable for new dataframe names --------------------------------------------
 
 simple_names <- c('League',
@@ -150,40 +154,26 @@ serbia_data %>%
 montenegro_data %>% 
   summarise_all(function(x) sum(is.na(x)))
 
-# Replace missing Date values -------------------------------------------------
-
-serbia_data <- replace_missing_dates(serbia_data)
-montenegro_data <- replace_missing_dates(montenegro_data)
-
 # Correct incorrect Date values -----------------------------------------------
 
-incorrect_date_level <- serbia_data$Level[year(serbia_data$Date)==2000]
-incorrect_date_matchday <- serbia_data$Matchday[year(serbia_data$Date)==2000]
-incorrect_date_season <- serbia_data$Season[year(serbia_data$Date)==2000]
+incorrect_date_level <- serbia_data$Level[!is.na(serbia_data$Date) & 
+                                            year(serbia_data$Date)==2000]
+incorrect_date_matchday <- serbia_data$Matchday[!is.na(serbia_data$Date) & 
+                                                  year(serbia_data$Date)==2000]
+incorrect_date_season <- serbia_data$Season[!is.na(serbia_data$Date) & 
+                                              year(serbia_data$Date)==2000]
 
 serbia_data$Date[year(serbia_data$Date)==2000] <- serbia_data$Date[year(serbia_data$Date)!=2000
                  & serbia_data$Level == incorrect_date_level
                  & serbia_data$Matchday == incorrect_date_matchday
                  & serbia_data$Season == incorrect_date_season][1]
 
-# Default missing resaults to 0:0 as to not affect Goal difference too much ---
-
-montenegro_data$HomeGoals[is.na(montenegro_data$HomeGoals)] <- 0
-montenegro_data$AwayGoals[is.na(montenegro_data$AwayGoals)] <- 0
-serbia_data$HomeGoals[is.na(serbia_data$HomeGoals)] <- 0
-serbia_data$AwayGoals[is.na(serbia_data$AwayGoals)] <- 0
-
 # View Data -------------------------------------------------------------------
 
-view(serbia_data)
-view(montenegro_data)
+View(serbia_data, title='Serbia Football Data')
+View(montenegro_data,  title='Montenegro Football Data')
 
-# Get seasonal data -----------------------------------------------------------
-
-serbia_data_tidy <- seasonal_result_data(serbia_data[serbia_data$Level==1,])
-montenegro_data_tidy <- seasonal_result_data(montenegro_data)
-
-# CONDUCT STATISTICAL ANALYSIS ------------------------------------------------
+## CONDUCT STATISTICAL ANALYSIS ------------------------------------------------
 # Get descriptive statistics --------------------------------------------------
 
 get_teams_per_level(serbia_data)
@@ -210,3 +200,124 @@ get_win_percentage_league_matchday(montenegro_data[montenegro_data$Level==1,])
 
 get_min_max_goals_team(serbia_data)
 get_min_max_goals_team(montenegro_data)
+
+get_win_percentage_weekdays(serbia_data)
+get_win_percentage_weekdays(montenegro_data)
+
+get_home_goals_descriptive_weekday(serbia_data)
+get_home_goals_descriptive_weekday(montenegro_data)
+get_away_goals_descriptive_weekday(serbia_data)
+get_away_goals_descriptive_weekday(montenegro_data)
+get_combined_goals_descriptive_weekday(serbia_data)
+get_combined_goals_descriptive_weekday(montenegro_data)
+
+# Use data for seasonal analysis ----------------------------------------------
+
+serbia_data_seasonal <- serbia_data
+montenegro_data_seasonal <- montenegro_data
+
+# Default missing resaults to 0:0 as to not affect Goal difference too much ---
+
+montenegro_data_seasonal$HomeGoals[is.na(montenegro_data_seasonal$HomeGoals)] <- 0
+montenegro_data_seasonal$AwayGoals[is.na(montenegro_data_seasonal$AwayGoals)] <- 0
+serbia_data_seasonal$HomeGoals[is.na(serbia_data_seasonal$HomeGoals)] <- 0
+serbia_data_seasonal$AwayGoals[is.na(serbia_data_seasonal$AwayGoals)] <- 0
+
+# Replace missing Date values -------------------------------------------------
+
+serbia_data_seasonal <- replace_missing_dates(serbia_data_seasonal)
+montenegro_data_seasonal <- replace_missing_dates(montenegro_data_seasonal)
+
+# Get seasonal data -----------------------------------------------------------
+
+serbia_data_tidy <- seasonal_result_data(serbia_data_seasonal[serbia_data_seasonal$Level==1,])
+montenegro_data_tidy <- seasonal_result_data(montenegro_data_seasonal[montenegro_data_seasonal$Level==1,])
+
+# Get seasonal performance per club -------------------------------------------
+
+get_club_seasonal_performance(serbia_data_tidy, 'Partizan (Beograd)')
+get_club_seasonal_performance(serbia_data_tidy, 'Crvena Zvezda (Beograd)')
+get_club_seasonal_performance(serbia_data_tidy, 'OFK Beograd (Beograd)')
+get_club_seasonal_performance(serbia_data_tidy, 'Čukarički (Beograd)')
+get_club_seasonal_performance(serbia_data_tidy, 'Spartak ŽK (Subotica)')
+get_club_seasonal_performance(serbia_data_tidy, 'Radnički (Niš)')
+get_club_seasonal_performance(serbia_data_tidy, 'Rad (Beograd)')
+
+get_club_seasonal_performance(montenegro_data_tidy, 'Sutjeska (Nikšić)')
+get_club_seasonal_performance(montenegro_data_tidy, 'Budućnost (Podgorica)')
+get_club_seasonal_performance(montenegro_data_tidy, 'Rudar (Pljevlja)')
+get_club_seasonal_performance(montenegro_data_tidy, 'Zeta (Golubovci)')
+get_club_seasonal_performance(montenegro_data_tidy, 'Grbalj (Radanovići)')
+get_club_seasonal_performance(montenegro_data_tidy, 'OFK Petrovac (Petrovac)')
+
+# Get end of the season table -------------------------------------------------
+
+season_ending_table_srb <- get_season_ending_table(serbia_data_tidy)
+season_ending_table_mne <- get_season_ending_table(montenegro_data_tidy)
+
+# Get statistics for the end of the season ------------------------------------
+
+season_ending_stats_srb <- get_season_ending_stat(season_ending_table_srb)
+season_ending_stats_mne <- get_season_ending_stat(season_ending_table_mne)
+
+View(season_ending_stats_srb, title='Season Ending Stats SRB')
+View(season_ending_stats_mne, title='Season Ending Stats MNE')
+
+# Plot end of season statistics -----------------------------------------------
+
+plot_season_ending(season_ending_stats_srb)
+plot_season_ending(season_ending_stats_mne)
+
+# Plot end of season statistics using joyplot ---------------------------------
+
+joyplot_points(season_ending_table_srb)
+joyplot_points(season_ending_table_mne)
+
+# Get data for opening weekend results ----------------------------------------
+
+opening_weekend_srb <- get_opening_weekend(serbia_data_tidy)
+opening_weekend_mne <- get_opening_weekend(montenegro_data_tidy)
+
+View(opening_weekend_srb, title='Opening Weekend Results Serbia')
+View(opening_weekend_mne, title='Opening Weekend Results Montenegro')
+
+# See if home field advantage somehow affects opening weekend results ---------
+
+opening_home_adv_srb <- get_opening_weekend_home_adv(opening_weekend_srb)
+opening_home_adv_mne <- get_opening_weekend_home_adv(opening_weekend_mne)
+
+View(opening_home_adv_srb, title='Home Field Advantage Opening Games Serbia')
+View(opening_home_adv_mne, title='Home Field Advantage Opening Games Montenegro')
+
+# See if home field advantage somehow affects results in general ---------------
+
+home_adv_srb <- get_home_adv_season(serbia_data_tidy)
+home_adv_mne <- get_home_adv_season(montenegro_data_tidy)
+
+View(home_adv_srb, title='Home Field Advantage Whole Season Serbia')
+View(home_adv_mne, title='Home Field Advantage Whole Season Montenegro')
+
+# See win percentage of opening games through season ---------------------------
+
+get_seasonal_opening_percentage(opening_weekend_srb)
+get_seasonal_opening_percentage(opening_weekend_mne)
+
+# See home field advantage per team --------------------------------------------
+
+home_team_adv_srb <- get_home_adv_team(opening_weekend_srb)
+home_team_adv_mne<- get_home_adv_team(opening_weekend_mne)
+
+View(home_team_adv_srb, title='Home Team Advantage Per Serbian Team')
+View(home_team_adv_mne, title='Home Team Advantage Per Montenegrin Team')
+
+# Plot win percentage for home and away games on opening weekend per team ------
+
+get_home_away_win_percent(home_team_adv_srb)
+get_home_away_win_percent(opening_weekend_mne)
+
+# Plot win percentage overall for teams on opening weekend ---------------------
+
+get_overall_win_percent(opening_weekend_srb)
+get_overall_win_percent(opening_weekend_mne)
+
+
