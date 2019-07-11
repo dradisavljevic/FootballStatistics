@@ -319,5 +319,3 @@ get_home_away_win_percent(opening_weekend_mne)
 
 get_overall_win_percent(opening_weekend_srb)
 get_overall_win_percent(opening_weekend_mne)
-
-
