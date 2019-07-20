@@ -1,104 +1,136 @@
-# Convert date from String to Date type ----------------------------------------
-
-str_to_date <- function(date) {
-  date <- gsub('\\.', '/', date)
+GetDateFromString <- function(date) {
+  # Convert date from string to a YYYY-MM-DD format.
+  #
+  # Args:
+  #  date: string value of the date to be processed
+  #
+  # Returns:
+  #  Date object in correct format
+  date <- gsub("\\.", "/", date)
   date <- dmy(date)
-  
   return(date)
 }
 
-# Function that spells the cities and club names grammarly correctly -----------
-
-capitalize_words <- function(city_name) {
-  city_name <- as.character(city_name)
-  capitalized_name <- strsplit(city_name, ' ')[[1]]
-  capitalized_name <- paste(toupper(substring(capitalized_name, 1,1)),
-                            substring(capitalized_name, 2), 
-                            sep='', collapse=' ')
-  return(capitalized_name)
+CapitalizeWords <- function(words) {
+  # Converts string to one where every word is capitalized.
+  # Equivalent to python's title() function.
+  #
+  # Args:
+  #  words: string to be capitalized
+  #
+  # Returns:
+  #  String with all words capitalized
+  words <- as.character(words)
+  capitalizedWords <- strsplit(words, " ")[[1]]
+  capitalizedWords <- paste(toupper(substring(capitalizedWords, 1,1)),
+                            substring(capitalizedWords, 2), 
+                            sep="", collapse=" ")
+  return(capitalizedWords)
 }
 
-# Merge city columns with club name ones ---------------------------------------
-
-merge_name_and_city <- function(df) {
-  team_id_vector <- c()
-  team_name_vector <- c()
+MergeClubAndCityNames <- function(df) {
+  # Merges names of the football clubs with the name of cities that they
+  # play in. This is in order to avoid bundling clubs with same names, but
+  # from different cities together.
+  #
+  # Args:
+  #  df: dataframe containing seasonal league information
+  #
+  # Returns:
+  #  Dataframe with club name columns changed to the format of ClubName (City)
+  teamIDVector <- c()
+  teamNameVector <- c()
   
   by(df, 1:nrow(df), function(row) {
-    if (!(row$HostID) %in% team_id_vector){
-      team_id_vector[length(team_id_vector)+1] <<- row$HostID
-      team_name_vector[length(team_name_vector)+1] <<-
-        paste(row$Host, ' (',row$HostCity, ')', sep='')
+    if (!(row$HostID) %in% teamIDVector){
+      teamIDVector[length(teamIDVector)+1] <<- row$HostID
+      teamNameVector[length(teamNameVector)+1] <<-
+        paste(row$Host, " (",row$HostCity, ")", sep="")
     }
   })
   
-  for (i in seq(1,length(team_id_vector))){
-    df$Host <- ifelse(df$HostID==team_id_vector[i],
-                               as.character(team_name_vector[i]),
+  for (i in seq(1,length(teamIDVector))){
+    df$Host <- ifelse(df$HostID==teamIDVector[i],
+                               as.character(teamNameVector[i]),
                                as.character(df$Host))
-    df$Guest <- ifelse(df$GuestID==team_id_vector[i],
-                                as.character(team_name_vector[i]),
+    df$Guest <- ifelse(df$GuestID==teamIDVector[i],
+                                as.character(teamNameVector[i]),
                                 as.character(df$Guest))
   }
-  
   return (df)
 }
 
-# Remove whitespace from club name and city columns ----------------------------
-
-remove_white_space <- function(df) {
-  df$Host <- trimws(gsub('\\s+', ' ', df$Host),
-                    'both', whitespace = '[ \t\r\n]')
+RemoveWhiteSpace <- function(df) {
+  # Removes trailing and leading whitespace from the football 
+  # club name and league name columns.
+  #
+  # Args:
+  #   df: dataframe containing seasonal league information
+  #
+  # Returns:
+  #   Dataframe with formated columns containing no extra whitespace
+  df$Host <- trimws(gsub("\\s+", " ", df$Host),
+                    "both", whitespace = "[ \t\r\n]")
   
-  df$Guest <- trimws(gsub('\\s+', ' ', df$Guest),
-                     'both', whitespace = '[ \t\r\n]')
+  df$Guest <- trimws(gsub("\\s+", " ", df$Guest),
+                     "both", whitespace = "[ \t\r\n]")
   
-  df$League <- trimws(gsub('\\s+', ' ', df$League),
-                      'both', whitespace = '[ \t\r\n]')
+  df$League <- trimws(gsub("\\s+", " ", df$League),
+                      "both", whitespace = "[ \t\r\n]")
   return (df)
 }
 
-# Take the end year of a season as season year ---------------------------------
-
-round_up_season <- function(df) {
+RoundUpSeason <- function(df) {
+  # Rounds up the season to the end year, changing the column format from
+  # YYYY-YYYY to YYYY.
+  #
+  # Args:
+  #  df: dataframe containing seasonal league information
+  #
+  # Returns:
+  #  Dataframe with season column changed
   df$Season <- as.numeric(substr(df$Season, 6, 9))
   return (df)
 }
 
-# Replace missing dates function ----------------------------------------------
-
-replace_missing_dates <- function(df) {
-  rows_with_missing_values <- df[is.na(df$Date),]
-  missing_dates <- c()
+ReplaceMissingDates <- function(df) {
+  # Replaces the missing date values from the dataframe by replacing them with
+  # assumed new values. Assumption is that every matchday is played exactly 7 
+  # days later than that which came before it.
+  #
+  # Args:
+  #  df: dataframe containing seasonal league information
+  #
+  # Returns:
+  #  Dataframe with date column filled in
+  missingValuesRow <- df[is.na(df$Date),]
+  missingDates <- c()
   
-  for (i in seq(1,nrow(rows_with_missing_values))){
-    missing_dates[i] <- df$Date[!is.na(df$Date) 
-                                         & df$Season == rows_with_missing_values$Season[i] 
-                                         & df$Matchday == rows_with_missing_values$Matchday[i] 
-                                         & df$Level == rows_with_missing_values$Level[i]][1]
+  for (i in seq(1,nrow(missingValuesRow))){
+    missingDates[i] <- df$Date[!is.na(df$Date) 
+                                         & df$Season == missingValuesRow$Season[i] 
+                                         & df$Matchday == missingValuesRow$Matchday[i] 
+                                         & df$Level == missingValuesRow$Level[i]][1]
   }
   
-  for (i in seq(1,length(missing_dates))){
-    df$Date[is.na(df$Date)][1] <- as.Date(missing_dates[i], origin=lubridate::origin)
+  for (i in seq(1,length(missingDates))){
+    df$Date[is.na(df$Date)][1] <- as.Date(missingDates[i], origin=lubridate::origin)
   }
   
-  rows_with_missing_values <- df[is.na(df$Date),]
+  missingValuesRow <- df[is.na(df$Date),]
   
-  if (dim(rows_with_missing_values)[1] != 0) {
-    matchday <- rows_with_missing_values$Matchday[1]-1
-    missing_date <- df$Date[!is.na(df$Date) 
-                            & df$Season == rows_with_missing_values$Season[1] 
-                            & df$Matchday+1 == rows_with_missing_values$Matchday[1] 
-                            & df$Level == rows_with_missing_values$Level[1]][1]
+  if (dim(missingValuesRow)[1] != 0) {
+    matchday <- missingValuesRow$Matchday[1]-1
+    missingDate <- df$Date[!is.na(df$Date) 
+                            & df$Season == missingValuesRow$Season[1] 
+                            & df$Matchday+1 == missingValuesRow$Matchday[1] 
+                            & df$Level == missingValuesRow$Level[1]][1]
   
-    iterations <- dim(rows_with_missing_values)[1]
+    iterations <- dim(missingValuesRow)[1]
     
     for (i in seq(1,iterations)){
-      df$Date[is.na(df$Date)][1] <- as.Date(missing_date, origin=lubridate::origin)+7*(df$Matchday[is.na(df$Date)][1]-matchday)
+      df$Date[is.na(df$Date)][1] <- as.Date(missingDate, origin=lubridate::origin)+7*(df$Matchday[is.na(df$Date)][1]-matchday)
     }
-    
-    }
-  
+  }
   return(df)
-  
 }

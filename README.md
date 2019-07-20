@@ -8,9 +8,9 @@ Trying out different statistical analysis on the gathered data as well as trying
 
 ## Data overview
 
-serbianData.csv - contains information from the first 4 levels of the Serbian football league system from the 2006/2007 season to the 2018/2019 season. The .csv file is located inside the SRB folder.
+* serbia_data.csv - contains information from the first 4 levels of the Serbian football league system from the 2006/2007 season to the 2018/2019 season. The .csv file is located inside the SRB folder.
 
-montenegroData.csv - contains information from the first 2 levels of Montenegro football league system from the 2013/2014 season to the 2018/2019 season, as well as the third level leagues from the 2016/2017 to the 2018/2019 season. .csv file is located inside the  MNE folder.
+* montenegro_data.csv - contains information from the first 2 levels of Montenegro football league system from the 2013/2014 season to the 2018/2019 season, as well as the third level leagues from the 2016/2017 to the 2018/2019 season. .csv file is located inside the  MNE folder.
 
 ## Prerequisites
 
